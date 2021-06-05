@@ -1,6 +1,7 @@
 package handledb
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -46,8 +47,8 @@ func getVirtualMachineByOS(db *sql.DB, os string) (VirtualMachines, error) {
 	return virtualms, err
 }
 
-func (db *MySqlStore) GetVirtualMachineById(id int) (Machine, error) {
-	row := db.QueryRow("SELECT * from Machine WHERE id = (?)", id)
+func (db *MySqlStore) GetVirtualMachineById(ctx context.Context, id int) (Machine, error) {
+	row := db.QueryRowContext(ctx, "SELECT * from Machine WHERE id = (?)", id)
 	vm := Machine{}
 	err := row.Scan(&vm.ID, &vm.Owner, &vm.OperatingSystem)
 	if err != nil {

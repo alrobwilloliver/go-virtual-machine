@@ -2,6 +2,7 @@ package client
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"handleVM/handledb"
 	"log"
@@ -32,7 +33,7 @@ func clientAddVirtualMachine(db *handledb.MySqlStore, scanner *bufio.Scanner) {
 	printOptions()
 }
 
-func clientGetVirtualMachineById(db *handledb.MySqlStore, scanner *bufio.Scanner) {
+func clientGetVirtualMachineById(ctx context.Context, db *handledb.MySqlStore, scanner *bufio.Scanner) {
 	fmt.Println("Getting a virtual machine by ID")
 	fmt.Println("What is the id of the virtual machine?")
 
@@ -42,7 +43,7 @@ func clientGetVirtualMachineById(db *handledb.MySqlStore, scanner *bufio.Scanner
 	if err != nil {
 		log.Fatal(err)
 	}
-	res, err := db.GetVirtualMachineById(intId)
+	res, err := db.GetVirtualMachineById(ctx, intId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,24 +55,30 @@ func clientGetVirtualMachineById(db *handledb.MySqlStore, scanner *bufio.Scanner
 	printOptions()
 }
 
-func RunClient(db *handledb.MySqlStore) {
+func RunClient(ctx context.Context, db *handledb.MySqlStore) {
 	fmt.Println("-------------------------------------")
 	fmt.Println("Welcome to Alan's VM creation client!")
 	fmt.Println("-------------------------------------")
 	printOptions()
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		switch scanner.Text() {
-		case "1":
-			clientAddVirtualMachine(db, scanner)
-		case "2":
-			clientGetVirtualMachineById(db, scanner)
-		case "3":
-			fmt.Println("Goodbye!")
+		select {
+		case <-ctx.Done():
+
 			return
 		default:
-			fmt.Println("This is not an option.")
-			fmt.Println("Press enter for more options.")
+			switch scanner.Text() {
+			case "1":
+				clientAddVirtualMachine(db, scanner)
+			case "2":
+				clientGetVirtualMachineById(ctx, db, scanner)
+			case "3":
+				fmt.Println("Goodbye!")
+				return
+			default:
+				fmt.Println("This is not an option.")
+				fmt.Println("Press enter for more options.")
+			}
 		}
 	}
 
